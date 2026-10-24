@@ -80,7 +80,7 @@ export const CLASSES: ClassDef[] = [
     blurb: 'Curses, damage over time and bound demons. Drains life from enemies to fuel its own spells, and the payoff comes to those who wait.',
     resource: 'Mana (and your own health)',
     betaTier: 'A',
-    weights: { fel: 3, shadow: 1.8, patience: 2.4, pet: 1.8, multitask: 1.4, risk: 1.2, planning: 1, solo: 1.4, melee: -3, support: -1.5, tank: -1, group: -0.4, holy: -1.5, reflex: -0.5 },
+    weights: { fel: 3, shadow: 1.8, patience: 2.4, pet: 1.8, multitask: 1.4, complexity: 0.6, risk: 1.2, planning: 1, solo: 1.4, mobility: -0.8, melee: -3, support: -1.5, tank: -1, group: -0.4, holy: -1.5, reflex: -0.5 },
     specs: [
       { name: 'Affliction', roles: ['Ranged DPS'], weights: { patience: 2, multitask: 1.5, planning: 0.5 } },
       { name: 'Demonology', roles: ['Ranged DPS'], weights: { pet: 2.5, solo: 0.8, risk: -0.5 } },
@@ -106,7 +106,7 @@ export const CLASSES: ClassDef[] = [
     blurb: 'Ranged physical damage with a pet at your side. Kiting, traps and tracking make it one of the strongest solo classes in the game.',
     resource: 'Mana',
     betaTier: 'A',
-    weights: { beast: 3, pet: 3, melee: -2.4, solo: 2.2, mobility: 2.2, nature: 0.8, planning: 0.6, reflex: 0.5, pvp: 0.4, support: -1, tank: -1, group: -0.5, stealth: -0.5, holy: -1 },
+    weights: { beast: 3, pet: 3, melee: -2.4, solo: 2.2, mobility: 2.8, complexity: -0.6, nature: 0.8, planning: 0.6, reflex: 0.5, pvp: 0.4, support: -1, tank: -1, group: -0.5, stealth: -0.5, holy: -1 },
     specs: [
       { name: 'Beast Mastery', roles: ['Ranged DPS'], weights: { pet: 2, solo: 1, complexity: -1 } },
       { name: 'Marksmanship', roles: ['Ranged DPS'], weights: { patience: 1, planning: 1, pet: -1, group: 0.5 } },

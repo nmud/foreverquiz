@@ -47,9 +47,9 @@ After each test the player rates how much they enjoyed it. Both performance and 
 **Scoring** (`src/engine/`):
 
 1. `profile.ts` turns answers into evidence on 25 traits (17 playstyle + 8 fantasy). Each trait is a weighted mean, shrunk toward neutral when evidence is thin.
-2. `fit.ts` scores each class as a weighted agreement between the profile and what the class asks of a player (`src/data/classes.ts`), normed against a null distribution (`src/data/norms.ts`) so no class wins by default. A logistic maps fit to a 1–99 % enjoyment likelihood, and the best spec is picked the same way.
+2. `fit.ts` scores each class as a weighted agreement between the profile and what the class asks of a player (`src/data/classes.ts`), normed against a null distribution (`src/data/norms.ts`) so no class wins by default. By default the 8 aesthetic traits from "Which powers call to you?" are left out, so the result reflects how you play; a switch on the results page (`fitClasses(profile, { aesthetics: true })`) adds them back. Each mode has its own norms. A logistic maps fit to a 1–99 % enjoyment likelihood, and the best spec is picked the same way.
 3. `share.ts` encodes the profile into the URL hash, so result links work without a server.
 
-**Calibration:** `npm run simulate` runs 20,000 random respondents plus nine archetype personas. Every class should win roughly 11 % of random runs, and every persona should land on its expected class. After changing any weights, run `npm run simulate -- --write` to regenerate the null norms.
+**Calibration:** `npm run simulate` runs 20,000 random respondents plus nine archetype personas. It checks both scoring modes: every class should win roughly 11 % of random runs, and every persona should land on its expected class. After changing any weights, run `npm run simulate -- --write` to regenerate both sets of null norms.
 
 Class kits are based on the 1.60 beta and may change at launch; update `src/data/classes.ts` when they do.

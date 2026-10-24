@@ -1,6 +1,6 @@
 import { CLASSES, type ClassDef, type Spec } from '../data/classes'
-import { NULL_NORMS } from '../data/norms'
-import type { ClassId, Dim, Profile } from './types'
+import { NULL_NORMS, NULL_NORMS_PLAY } from '../data/norms'
+import { FANTASY_DIMS, type ClassId, type Dim, type Profile } from './types'
 
 export interface ClassFit {
   cls: ClassDef
@@ -34,16 +34,29 @@ const sigmoid = (x: number) => 1 / (1 + Math.exp(-x))
 const ABS_GAIN = 4.2
 const REL_GAIN = 0.55
 
-/** Raw agreement with each class, before null-norming. Exposed for calibration. */
-export function rawFits(profile: Profile) {
-  return CLASSES.map((c) => agreement(c.weights, profile.dims))
+export interface FitOptions {
+  /** Count the "which powers call to you" pick. Off by default: score how you play, not what looks cool. */
+  aesthetics?: boolean
 }
 
-export function fitClasses(profile: Profile): ClassFit[] {
+const isFantasy = (k: string) => (FANTASY_DIMS as readonly string[]).includes(k)
+
+/** A class or spec profile, with the aesthetic dimensions removed unless they count. */
+function weightsFor(w: Partial<Record<Dim, number>>, aesthetics: boolean) {
+  return aesthetics ? w : (Object.fromEntries(Object.entries(w).filter(([k]) => !isFantasy(k))) as Partial<Record<Dim, number>>)
+}
+
+/** Raw agreement with each class, before null-norming. Exposed for calibration. */
+export function rawFits(profile: Profile, { aesthetics = false }: FitOptions = {}) {
+  return CLASSES.map((c) => agreement(weightsFor(c.weights, aesthetics), profile.dims))
+}
+
+export function fitClasses(profile: Profile, { aesthetics = false }: FitOptions = {}): ClassFit[] {
   const { dims } = profile
-  const pooledSd = Object.values(NULL_NORMS).reduce((s, [, sd]) => s + sd, 0) / CLASSES.length
-  const raw = rawFits(profile).map((f, i) => {
-    const [mu, sd] = NULL_NORMS[CLASSES[i].id]
+  const norms = aesthetics ? NULL_NORMS : NULL_NORMS_PLAY
+  const pooledSd = Object.values(norms).reduce((s, [, sd]) => s + sd, 0) / CLASSES.length
+  const raw = rawFits(profile, { aesthetics }).map((f, i) => {
+    const [mu, sd] = norms[CLASSES[i].id]
     return ((f - mu) / sd) * pooledSd
   })
   const mean = raw.reduce((s, x) => s + x, 0) / raw.length
@@ -54,9 +67,9 @@ export function fitClasses(profile: Profile): ClassFit[] {
     const z = (fit - mean) / Math.max(sd, 0.04)
     const pct = Math.round(100 * sigmoid(ABS_GAIN * fit + REL_GAIN * z))
     const spec = cls.specs
-      .map((s) => ({ s, score: agreement(s.weights, dims) }))
+      .map((s) => ({ s, score: agreement(weightsFor(s.weights, aesthetics), dims) }))
       .sort((a, b) => b.score - a.score)[0].s
-    const parts = (Object.entries(cls.weights) as [Dim, number][]).map(
+    const parts = (Object.entries(weightsFor(cls.weights, aesthetics)) as [Dim, number][]).map(
       ([k, w]) => [k, w * (dims[k] ?? 0)] as [Dim, number],
     )
     const pulls = parts.filter(([, c]) => c > 0.05).sort((a, b) => b[1] - a[1]).slice(0, 3)

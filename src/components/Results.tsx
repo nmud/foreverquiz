@@ -17,7 +17,8 @@ const GAME_LABEL: Record<GameId, string> = {
 }
 
 export function Results({ profile, shared, onRestart }: { profile: Profile; shared: boolean; onRestart: () => void }) {
-  const fits = useMemo(() => fitClasses(profile), [profile])
+  const [aesthetics, setAesthetics] = useState(false)
+  const fits = useMemo(() => fitClasses(profile, { aesthetics }), [profile, aesthetics])
   const order = useMemo(() => ranked(fits), [fits])
   const best = order[0]
   const runnerUp = order[1]
@@ -61,11 +62,32 @@ export function Results({ profile, shared, onRestart }: { profile: Profile; shar
               <span className="muted"> · {margin >= 8 ? 'clear lead' : margin >= 3 ? 'narrow lead' : 'near tie'} over {runnerUp.cls.name}</span>
             </span>
           </div>
+          {profile.fantasy.length > 0 && (
+            <div className="aesthetic">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={aesthetics}
+                className="switch"
+                onClick={() => setAesthetics((a) => !a)}
+              >
+                <span className="switch__track" aria-hidden="true">
+                  <span className="switch__thumb" />
+                </span>
+                Count my aesthetic pick
+              </button>
+              <span className="aesthetic__note">
+                {aesthetics
+                  ? `On: includes the powers you picked (${profile.fantasy.map((f) => FANTASY_LABEL[f]).join(', ')}).`
+                  : 'Off: scored on how you play, not which class looks coolest.'}
+              </span>
+            </div>
+          )}
           <p className="verdict__blurb">{best.cls.blurb}</p>
           <Reasons fit={best} profile={profile} />
         </div>
         <figure className="verdict__compass reveal" style={{ ['--i' as string]: 1 }}>
-          <Compass fits={fits} />
+          <Compass key={String(aesthetics)} fits={fits} />
           <figcaption className="caption">Each spoke is a class. The further the shape reaches, the more likely you are to enjoy it. Hover or focus a class for its best spec.</figcaption>
         </figure>
       </section>
@@ -163,7 +185,7 @@ export function Results({ profile, shared, onRestart }: { profile: Profile; shar
           </div>
           <div>
             <h3>Scoring</h3>
-            <p>About 75 pieces of evidence feed 25 traits, each shrunk toward neutral when evidence is thin. Each class is a weighted profile of what it asks of a player. Class scales are normed on 20,000 simulated random respondents, so no class wins by default. Fit becomes a likelihood through a logistic curve.</p>
+            <p>About 75 pieces of evidence feed 25 traits, each shrunk toward neutral when evidence is thin. Each class is a weighted profile of what it asks of a player. By default the aesthetic question is left out, so the result reflects how you play rather than which class looks coolest; the switch adds it back. Both modes are normed on 20,000 simulated random respondents, so no class wins by default. Fit becomes a likelihood through a logistic curve.</p>
           </div>
         </div>
         <p className="note">This is an informed estimate, not a verdict. Forever is in beta and class kits may change at launch. Ten personality items trade precision for speed.</p>

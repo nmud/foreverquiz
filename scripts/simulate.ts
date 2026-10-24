@@ -6,7 +6,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { CLASSES } from '../src/data/classes'
-import { NULL_NORMS } from '../src/data/norms'
+import { NULL_NORMS, NULL_NORMS_PLAY } from '../src/data/norms'
 import { QUESTIONS_A, QUESTIONS_B } from '../src/data/questions'
 import { fitClasses, ranked, rawFits } from '../src/engine/fit'
 import { buildProfile } from '../src/engine/profile'
@@ -40,41 +40,68 @@ function randomAnswers(): Answers {
 
 const N = 20000
 
-// Null norms: each class's raw-fit mean and SD under random responding.
+// Two scoring modes: play only (default) and with the aesthetic pick counted.
+const MODES = [
+  { name: 'NULL_NORMS_PLAY', label: 'play only (default)', aesthetics: false },
+  { name: 'NULL_NORMS', label: 'with aesthetic pick', aesthetics: true },
+]
+
+// Null norms: each class's raw-fit mean and SD under random responding, per mode.
 if (process.argv.includes('--write')) {
-  seed = 11
-  const cols: number[][] = CLASSES.map(() => [])
-  for (let i = 0; i < N; i++) rawFits(buildProfile(randomAnswers())).forEach((f, j) => cols[j].push(f))
-  const lines = CLASSES.map((c, j) => {
-    const mu = cols[j].reduce((s, x) => s + x, 0) / N
-    const sd = Math.sqrt(cols[j].reduce((s, x) => s + (x - mu) ** 2, 0) / N)
-    NULL_NORMS[c.id] = [+mu.toFixed(4), +sd.toFixed(4)]
-    return `  ${c.id}: [${mu.toFixed(4)}, ${sd.toFixed(4)}],`
+  const blocks = MODES.map((m) => {
+    seed = 11
+    const raws = Array.from({ length: N }, () => rawFits(buildProfile(randomAnswers()), m))
+    const K = CLASSES.length
+    const mu = CLASSES.map((_, j) => raws.reduce((s, r) => s + r[j], 0) / N)
+    const sd = CLASSES.map((_, j) => Math.sqrt(raws.reduce((s, r) => s + (r[j] - mu[j]) ** 2, 0) / N))
+    const pooled = sd.reduce((s, x) => s + x, 0) / K
+    // Centering alone leaves classes that overlap with neighbours under-picked. Nudge each
+    // class's baseline until all win equally often under random responding, then fold the
+    // nudge into its mean so the app's formula is unchanged.
+    const bias = CLASSES.map(() => 0)
+    for (let iter = 0; iter < 120; iter++) {
+      const share = CLASSES.map(() => 0)
+      for (const r of raws) {
+        let best = 0
+        let bestV = -Infinity
+        for (let j = 0; j < K; j++) {
+          const v = ((r[j] - mu[j]) / sd[j]) * pooled + bias[j]
+          if (v > bestV) (bestV = v), (best = j)
+        }
+        share[best]++
+      }
+      for (let j = 0; j < K; j++) bias[j] += 1.5 * pooled * (1 / K - share[j] / N)
+    }
+    const target = m.aesthetics ? NULL_NORMS : NULL_NORMS_PLAY
+    const lines = CLASSES.map((c, j) => {
+      const center = mu[j] - (bias[j] * sd[j]) / pooled
+      target[c.id] = [+center.toFixed(4), +sd[j].toFixed(4)]
+      return `  ${c.id}: [${center.toFixed(4)}, ${sd[j].toFixed(4)}],`
+    })
+    return `/** Scoring mode: ${m.label}. */\nexport const ${m.name}: Record<ClassId, [number, number]> = {\n${lines.join('\n')}\n}\n`
   })
-  const file = readFileSync('src/data/norms.ts', 'utf8').replace(
-    /export const NULL_NORMS[^]*?\n}\n/,
-    `export const NULL_NORMS: Record<ClassId, [number, number]> = {\n${lines.join('\n')}\n}\n`,
-  )
-  writeFileSync('src/data/norms.ts', file)
+  const head = readFileSync('src/data/norms.ts', 'utf8').split('/** Scoring mode')[0].split('export const')[0]
+  writeFileSync('src/data/norms.ts', head + blocks.join('\n'))
   console.log('Wrote src/data/norms.ts')
-  seed = 7
 }
 
-const wins: Record<string, number> = {}
-const pctTop: number[] = []
-const pctAll: number[] = []
-for (let i = 0; i < N; i++) {
-  const fits = fitClasses(buildProfile(randomAnswers()))
-  const r = ranked(fits)
-  wins[r[0].cls.id] = (wins[r[0].cls.id] ?? 0) + 1
-  pctTop.push(r[0].pct)
-  fits.forEach((f) => pctAll.push(f.pct))
-}
 const q = (xs: number[], p: number) => [...xs].sort((a, b) => a - b)[Math.floor(p * (xs.length - 1))]
-console.log('\nTop-pick share under random responding (ideal ≈ 11.1% each):')
-for (const [k, v] of Object.entries(wins).sort((a, b) => b[1] - a[1])) console.log(`  ${k.padEnd(8)} ${((v / N) * 100).toFixed(1)}%`)
-console.log(`\nTop-class % : p10 ${q(pctTop, 0.1)}  median ${q(pctTop, 0.5)}  p90 ${q(pctTop, 0.9)}`)
-console.log(`All classes %: p10 ${q(pctAll, 0.1)}  median ${q(pctAll, 0.5)}  p90 ${q(pctAll, 0.9)}`)
+for (const m of MODES) {
+  seed = 7
+  const wins: Record<string, number> = {}
+  const pctTop: number[] = []
+  const pctAll: number[] = []
+  for (let i = 0; i < N; i++) {
+    const fits = fitClasses(buildProfile(randomAnswers()), m)
+    const r = ranked(fits)
+    wins[r[0].cls.id] = (wins[r[0].cls.id] ?? 0) + 1
+    pctTop.push(r[0].pct)
+    fits.forEach((f) => pctAll.push(f.pct))
+  }
+  console.log(`\n[${m.label}] top-pick share under random responding (ideal ≈ 11.1% each):`)
+  console.log('  ' + Object.entries(wins).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${((v / N) * 100).toFixed(1)}%`).join(' · '))
+  console.log(`  top class: p10 ${q(pctTop, 0.1)}% median ${q(pctTop, 0.5)}% p90 ${q(pctTop, 0.9)}% · all classes: p10 ${q(pctAll, 0.1)}% median ${q(pctAll, 0.5)}% p90 ${q(pctAll, 0.9)}%`)
+}
 
 // Personas: [expected class, tipi (1–7 ×10), choices, games-ish, enjoy]
 type Persona = { name: string; expect: ClassId[]; tipi: number[]; choices: Record<string, string[]>; enjoy: Partial<Record<GameId, number>>; tweak?: (a: Answers) => void }
@@ -89,16 +116,18 @@ const P: Persona[] = [
   { name: 'Storm caller', expect: ['shaman'], tipi: [5, 3, 5, 3, 6, 3, 5, 3, 5, 2], choices: { role: ['flex'], evening: ['raid'], fight: ['control'], delay: ['mid'], fantasy: ['elements'], pet: ['fine'], buttons: ['full'], opener: ['buff'] }, enjoy: { rotation: 1, runes: 1, triage: 0.5 } },
   { name: 'Front-line brawler', expect: ['warrior'], tipi: [6, 5, 4, 2, 4, 2, 3, 4, 6, 4], choices: { role: ['tank'], evening: ['raid'], fight: ['wall'], delay: ['now'], fantasy: ['steel'], pet: ['no'], buttons: ['mid'], opener: ['charge'] }, enjoy: { overcharge: 1, interrupt: 0.5, kite: -1, triage: -1 } },
 ]
-console.log('\nPersonas:')
-let ok = 0
-for (const p of P) {
-  const a = emptyAnswers()
-  a.tipi = p.tipi
-  a.choices = p.choices
-  a.enjoy = p.enjoy
-  const r = ranked(fitClasses(buildProfile(a)))
-  const hit = p.expect.includes(r[0].cls.id)
-  ok += hit ? 1 : 0
-  console.log(`  ${hit ? 'ok  ' : 'MISS'} ${p.name.padEnd(20)} → ${r.slice(0, 3).map((f) => `${f.cls.name} ${f.pct}% (${f.spec.name})`).join(' · ')}`)
+for (const m of MODES) {
+  console.log(`\nPersonas, ${m.label}:`)
+  let ok = 0
+  for (const p of P) {
+    const a = emptyAnswers()
+    a.tipi = p.tipi
+    a.choices = p.choices
+    a.enjoy = p.enjoy
+    const r = ranked(fitClasses(buildProfile(a), m))
+    const hit = p.expect.includes(r[0].cls.id)
+    ok += hit ? 1 : 0
+    console.log(`  ${hit ? 'ok  ' : 'MISS'} ${p.name.padEnd(20)} → ${r.slice(0, 3).map((f) => `${f.cls.name} ${f.pct}% (${f.spec.name})`).join(' · ')}`)
+  }
+  console.log(`  ${ok}/${P.length} personas land on the expected class.`)
 }
-console.log(`\n${ok}/${P.length} personas land on the expected class.`)
