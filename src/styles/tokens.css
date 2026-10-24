@@ -1,0 +1,102 @@
+/* Hallmark · genre: atmospheric · macrostructure: Workbench (instrument-led flow) · theme: Lumen, Night Foundry drop, brass tuned toward old gold
+ * enrichment: Tier B hand-built SVG compass · nav: N9 edge-aligned · footer: Ft2 inline single line
+ * pre-emit critique: P4 H4 E4 S5 R4 V4
+ */
+:root {
+  color-scheme: dark;
+
+  /* Paper and ink: cool violet night, never pure black or white */
+  --color-paper: oklch(13% 0.014 275);
+  --color-paper-2: oklch(17% 0.016 275);
+  --color-paper-3: oklch(21% 0.018 275);
+  --color-paper-4: oklch(25% 0.02 275);
+  --color-rule: oklch(29% 0.016 275);
+  --color-rule-2: oklch(37% 0.016 275);
+  --color-neutral: oklch(55% 0.014 275);
+  --color-muted: oklch(70% 0.012 275);
+  --color-ink-2: oklch(85% 0.008 270);
+  --color-ink: oklch(96% 0.006 270);
+
+  /* One accent: old gold. Coral is the secondary chord, used sparingly. */
+  --color-accent: oklch(80% 0.13 78);
+  --color-accent-strong: oklch(86% 0.14 84);
+  --color-accent-dim: oklch(58% 0.1 72);
+  --color-accent-wash: oklch(80% 0.13 78 / 0.12);
+  --color-accent-2: oklch(70% 0.15 22);
+  --color-on-accent: oklch(18% 0.03 70);
+  --color-glow: oklch(80% 0.13 78 / 0.2);
+  --color-glow-2: oklch(55% 0.14 300 / 0.16);
+  --color-focus: oklch(86% 0.14 84);
+
+  /* Diverging pair for preference axes, neutral midpoint is --color-rule-2 */
+  --color-pole-left: oklch(72% 0.09 240);
+  --color-pole-right: oklch(80% 0.13 78);
+
+  /* Game semantics */
+  --color-danger: oklch(65% 0.2 27);
+  --color-danger-wash: oklch(65% 0.2 27 / 0.16);
+  --color-safe: oklch(72% 0.12 240);
+  --color-good: oklch(76% 0.15 150);
+  --color-hp: oklch(72% 0.17 145);
+  --color-hp-low: oklch(66% 0.2 30);
+  --color-mana: oklch(66% 0.15 255);
+  --color-fire: oklch(72% 0.18 50);
+  --color-rune-fire: oklch(70% 0.19 35);
+  --color-rune-nature: oklch(75% 0.17 145);
+  --color-rune-arcane: oklch(72% 0.14 290);
+  --color-shadow: oklch(5% 0.01 275 / 0.6);
+
+  /* Class colours (the familiar in-game palette, in OKLCH) */
+  --class-warrior: oklch(71.9% 0.08 67.9);
+  --class-paladin: oklch(76.4% 0.136 352.8);
+  --class-hunter: oklch(81.6% 0.133 127.9);
+  --class-rogue: oklch(95% 0.159 104.8);
+  --class-priest: oklch(96% 0.006 270);
+  --class-shaman: oklch(60% 0.18 255.6);
+  --class-mage: oklch(77.2% 0.124 219.7);
+  --class-warlock: oklch(67.1% 0.149 281.2);
+  --class-druid: oklch(72.6% 0.187 50.9);
+
+  /* Type */
+  --font-display: 'Marcellus', 'Iowan Old Style', Georgia, serif;
+  --font-body: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: clamp(1.75rem, 2.2vw + 1rem, 2.375rem);
+  --text-display: clamp(2.5rem, 5.5vw + 1rem, 4.75rem);
+  --text-display-xl: clamp(3.25rem, 9vw + 1rem, 7rem);
+
+  /* 4pt spacing */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --rule-hair: 1px solid var(--color-rule);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+  --dur-reveal: 1400ms;
+}
